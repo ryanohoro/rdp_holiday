@@ -1,9 +1,10 @@
 # rdp_holiday
 https://www.youtube.com/watch?v=ceR4TDuqE5A
 
-#Install
+# Install
 ```pip3 install git+https://github.com/wmetcalf/rdp_holiday.git -U```
 
+# Example
 ```
 rdp_holiday -i /home/coz/Downloads/bad.rdp -o bad.json
 cat bad.json | jq
