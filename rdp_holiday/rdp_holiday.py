@@ -80,7 +80,7 @@ def parse_rdp_file(file_path):
 
             with open(file_path, "r", encoding=encoding, errors="ignore") as f:
                 content = f.read()
-        if content and re.search(r"full\s+address\s*:\s*s\s*:",content):
+        if content and re.search(r"full\s+address\s*:\s*s\s*:",content,re.I):
             for line in content.splitlines():
                 for prop, pattern in property_patterns.items():
                     match = pattern.search(line)
