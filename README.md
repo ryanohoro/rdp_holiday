@@ -1,9 +1,12 @@
 # rdp_holiday
 https://www.youtube.com/watch?v=ceR4TDuqE5A
 
+#Install
+```pip3 install git+https://github.com/wmetcalf/rdp_holiday.git -U```
+
 ```
-coz@genesis:~$ python3 rdp_holiday.py -i /home/coz/Downloads/bad.rdp -o bad.json
-coz@genesis:~$ cat bad.json | jq
+rdp_holiday -i /home/coz/Downloads/bad.rdp -o bad.json
+cat bad.json | jq
 {
   "alternate_full_address": "us-west-1.ukrtelecom.cloud",
   "full_address": "us-west-1.ukrtelecom.cloud",
