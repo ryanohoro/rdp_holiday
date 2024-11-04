@@ -5,6 +5,10 @@ from struct import unpack
 import traceback
 import sys
 from hashlib import sha1, sha256
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.serialization import pkcs7
 
 try:
     import re2 as re
@@ -80,7 +84,7 @@ def parse_rdp_file(file_path):
 
             with open(file_path, "r", encoding=encoding, errors="ignore") as f:
                 content = f.read()
-        if content and re.search(r"full\s+address\s*:\s*s\s*:",content,re.I):
+        if content and re.search(r"full\s+address\s*:\s*s\s*:", content, re.I):
             for line in content.splitlines():
                 for prop, pattern in property_patterns.items():
                     match = pattern.search(line)
@@ -106,6 +110,22 @@ def parse_rdp_file(file_path):
             rdp_properties["signature_hex"] = signature_bytes.hex()
             rdp_properties["signature_sha1"] = sha1(signature_bytes).hexdigest()
             rdp_properties["signature_sha256"] = sha256(signature_bytes).hexdigest()
+            rdp_properties["certificates"] = []
+            try:
+                certs = pkcs7.load_der_pkcs7_certificates(signature_bytes)
+                for cert in certs:
+                    cert_info = {
+                        "subject": cert.subject.rfc4514_string(),
+                        "issuer": cert.issuer.rfc4514_string(),
+                        "not_before": cert.not_valid_before_utc.isoformat(),
+                        "not_after": cert.not_valid_after_utc.isoformat(),
+                        "serial_number": str(cert.serial_number),
+                        "fingerprint_sha256": cert.fingerprint(hashes.SHA256()).hex(),
+                        "fingerprint_sha1": cert.fingerprint(hashes.SHA1()).hex(),
+                    }
+                    rdp_properties["certificates"].append(cert_info)
+            except Exception as e:
+                print(f"Error parsing certificate: {e}")
 
     except Exception as e:
         print(f"Error reading or parsing RDP file: {e}")
