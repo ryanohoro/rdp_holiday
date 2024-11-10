@@ -10,6 +10,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "certvalidator",
+        "asn1crypto",
+        "mscerts",
     ],
     entry_points={
         "console_scripts": [
