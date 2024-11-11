@@ -1,23 +1,21 @@
-import json
 import argparse
 import base64
-import logging
 import datetime
-from struct import unpack
-from contextlib import suppress
-
+import json
+import logging
 import sys
+from contextlib import suppress
 from hashlib import sha1, sha256
+from struct import unpack
 
 MISSED_DEPS = False
 try:
     import mscerts
     from asn1crypto import pem, x509
     from certvalidator import CertificateValidator, ValidationContext
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.serialization import pkcs7
-    from cryptography.hazmat.primitives import serialization
     from cryptography import x509 as cx509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.serialization import pkcs7
     from cryptography.x509.oid import ExtensionOID
 except ImportError:
     print("pip3 install certvalidator asn1crypto mscerts")
