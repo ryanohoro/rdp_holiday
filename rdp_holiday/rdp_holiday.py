@@ -82,7 +82,7 @@ def validate_sig(hostname, alternate_faddress, pkcs7_certificates):
         "main_valid": False,
         "alt_valid": False,
     }
-    if not MISSED_DEPS:
+    if MISSED_DEPS:
         return sign_data
     try:
         ca_bundle_path = mscerts.where()
@@ -150,9 +150,7 @@ def parse_rdp_file(file_path):
             print("full_address is a required field... what sort of nonsense are you trying to feed me?")
             return rdp_properties
         if "full_address" not in rdp_properties:
-            print(
-                "full_address is a required field but is not in parsed Properties what sort of nonsense are you trying to feed me?"
-            )
+            print("full_address is a required field but is not in parsed Properties what sort of nonsense are you trying to feed me?")
             return rdp_properties
         rdp_properties["signscope_but_missing_sig"] = False
         if "signscope" in rdp_properties and "signature" not in rdp_properties:
