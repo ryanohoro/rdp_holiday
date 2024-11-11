@@ -161,51 +161,53 @@ def parse_rdp_file(file_path):
             rdp_properties["certificates"] = []
             rdp_properties["certificate_chain_len"] = 0
             signature_bytes = b""
-            rdp_properties["certificate_truncated_or_invalid"] = True
             with suppress(Exception):
                 signature_bytes = base64.b64decode(signature_base64.replace("\n", "").replace("\r", ""))
-            size_bytes = signature_bytes[8:12]
-            data_size = 0
-            with suppress(Exception):
-                data_size = unpack("<I", size_bytes)[0]
-            try:
-                if len(signature_bytes) < data_size:
-                    rdp_properties["certificate_truncated_or_invalid"] = True
-                signature_bytes = signature_bytes[12 : 12 + data_size]
+            if not signature_bytes:
+                rdp_properties["certificate_truncated_or_invalid"] = True
+            else:
+                size_bytes = signature_bytes[8:12]
+                data_size = 0
+                with suppress(Exception):
+                    data_size = unpack("<I", size_bytes)[0]
                 try:
-                    if signature_bytes:
-                        rdp_properties["signature_hex"] = signature_bytes.hex()
-                        rdp_properties["signature_sha1"] = sha1(signature_bytes).hexdigest()
-                        rdp_properties["signature_sha256"] = sha256(signature_bytes).hexdigest()
-                        certs = pkcs7.load_der_pkcs7_certificates(signature_bytes)
-                        rdp_properties["certificate_chain_validation"] = validate_sig(
-                            f"{rdp_properties['full_address']}", f"{rdp_properties['alternate_full_address']}", certs
-                        )
-                        for cert in certs:
-                            cert_info = {
-                                "subject": cert.subject.rfc4514_string(),
-                                "issuer": cert.issuer.rfc4514_string(),
-                                "not_before": cert.not_valid_before_utc.isoformat(),
-                                "not_after": cert.not_valid_after_utc.isoformat(),
-                                "serial_number": str(cert.serial_number),
-                                "fingerprint_sha256": cert.fingerprint(hashes.SHA256()).hex(),
-                                "fingerprint_sha1": cert.fingerprint(hashes.SHA1()).hex(),
-                            }
-                            morris_day_and_the_utc_time = datetime.datetime.now(datetime.timezone.utc)
-                            if cert.not_valid_before_utc <= morris_day_and_the_utc_time <= cert.not_valid_after_utc:
-                                cert_info["cert_valid_date"] = True
-                            else:
-                                cert_info["cert_valid"] = False
-                            san_values = []
-                            with suppress(Exception):
-                                san_extension = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-                                san_values = san_extension.value.get_values_for_type(cx509.DNSName)
-                            cert_info["subject_alternative_names"] = san_values if san_values else None
-                            rdp_properties["certificates"].append(cert_info)
+                    if len(signature_bytes) < data_size:
+                        rdp_properties["certificate_truncated_or_invalid"] = True
+                    signature_bytes = signature_bytes[12 : 12 + data_size]
+                    try:
+                        if signature_bytes:
+                            rdp_properties["signature_hex"] = signature_bytes.hex()
+                            rdp_properties["signature_sha1"] = sha1(signature_bytes).hexdigest()
+                            rdp_properties["signature_sha256"] = sha256(signature_bytes).hexdigest()
+                            certs = pkcs7.load_der_pkcs7_certificates(signature_bytes)
+                            rdp_properties["certificate_chain_validation"] = validate_sig(
+                                f"{rdp_properties['full_address']}", f"{rdp_properties['alternate_full_address']}", certs
+                            )
+                            for cert in certs:
+                                cert_info = {
+                                    "subject": cert.subject.rfc4514_string(),
+                                    "issuer": cert.issuer.rfc4514_string(),
+                                    "not_before": cert.not_valid_before_utc.isoformat(),
+                                    "not_after": cert.not_valid_after_utc.isoformat(),
+                                    "serial_number": str(cert.serial_number),
+                                    "fingerprint_sha256": cert.fingerprint(hashes.SHA256()).hex(),
+                                    "fingerprint_sha1": cert.fingerprint(hashes.SHA1()).hex(),
+                                }
+                                morris_day_and_the_utc_time = datetime.datetime.now(datetime.timezone.utc)
+                                if cert.not_valid_before_utc <= morris_day_and_the_utc_time <= cert.not_valid_after_utc:
+                                    cert_info["cert_valid_date"] = True
+                                else:
+                                    cert_info["cert_valid"] = False
+                                san_values = []
+                                with suppress(Exception):
+                                    san_extension = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+                                    san_values = san_extension.value.get_values_for_type(cx509.DNSName)
+                                cert_info["subject_alternative_names"] = san_values if san_values else None
+                                rdp_properties["certificates"].append(cert_info)
+                    except Exception as e:
+                        print(f"Error parsing certificate: {e}")
                 except Exception as e:
                     print(f"Error parsing certificate: {e}")
-            except Exception as e:
-                print(f"Error parsing certificate: {e}")
             rdp_properties["certificate_chain_len"] = len(rdp_properties["certificates"])
     except Exception as e:
         print(f"Error reading or parsing RDP file: {e}")
