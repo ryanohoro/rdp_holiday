@@ -1,22 +1,27 @@
 import json
 import argparse
 import base64
+import logging
+import datetime
 from struct import unpack
+from contextlib import suppress
 
 import sys
 from hashlib import sha1, sha256
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.serialization import pkcs7
-from certvalidator import CertificateValidator, ValidationContext
-from cryptography.hazmat.primitives import serialization
-from asn1crypto import pem, x509
-from cryptography import x509 as cx509
 
-from cryptography.x509.oid import ExtensionOID
-import mscerts
-
-import datetime
-
+MISSED_DEPS = False
+try:
+    import mscerts
+    from asn1crypto import pem, x509
+    from certvalidator import CertificateValidator, ValidationContext
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.serialization import pkcs7
+    from cryptography.hazmat.primitives import serialization
+    from cryptography import x509 as cx509
+    from cryptography.x509.oid import ExtensionOID
+except ImportError:
+    print("pip3 install certvalidator asn1crypto mscerts")
+    MISSED_DEPS = True
 try:
     import re2 as re
 except ImportError:
@@ -66,18 +71,22 @@ property_patterns = {
     "signscope": re.compile(r"signscope\s*:\s*s\s*:\s*(.*)", re.I),
 }
 
+log = logging.getLogger()
+
 
 def validate_sig(hostname, alternate_faddress, pkcs7_certificates):
+    sign_data = {
+        "can_sign": False,
+        "usage_error": "",
+        "valid": False,
+        "validation_errors": [],
+        "general_error": "",
+        "main_valid": False,
+        "alt_valid": False,
+    }
+    if not MISSED_DEPS:
+        return sign_data
     try:
-        sign_data = {
-            "can_sign": False,
-            "usage_error": "",
-            "valid": False,
-            "validation_errors": [],
-            "general_error": "",
-            "main_valid": False,
-            "alt_valid": False,
-        }
         ca_bundle_path = mscerts.where()
         trust_roots = []
         with open(ca_bundle_path, "rb") as f:
@@ -143,7 +152,9 @@ def parse_rdp_file(file_path):
             print("full_address is a required field... what sort of nonsense are you trying to feed me?")
             return rdp_properties
         if "full_address" not in rdp_properties:
-            print("full_address is a required field but is not in parsed Properties what sort of nonsense are you trying to feed me?")
+            print(
+                "full_address is a required field but is not in parsed Properties what sort of nonsense are you trying to feed me?"
+            )
             return rdp_properties
         rdp_properties["signscope_but_missing_sig"] = False
         if "signscope" in rdp_properties and "signature" not in rdp_properties:
@@ -154,16 +165,13 @@ def parse_rdp_file(file_path):
             rdp_properties["certificates"] = []
             rdp_properties["certificate_chain_len"] = 0
             signature_bytes = b""
-            try:
+            rdp_properties["certificate_truncated_or_invalid"] = True
+            with suppress(Exception):
                 signature_bytes = base64.b64decode(signature_base64.replace("\n", "").replace("\r", ""))
-            except:
-                rdp_properties["certificate_truncated_or_invalid"] = True
-
             size_bytes = signature_bytes[8:12]
-            try:
+            data_size = 0
+            with suppress(Exception):
                 data_size = unpack("<I", size_bytes)[0]
-            except:
-                data_size = 0
             try:
                 if len(signature_bytes) < data_size:
                     rdp_properties["certificate_truncated_or_invalid"] = True
@@ -193,11 +201,9 @@ def parse_rdp_file(file_path):
                             else:
                                 cert_info["cert_valid"] = False
                             san_values = []
-                            try:
+                            with suppress(Exception):
                                 san_extension = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
                                 san_values = san_extension.value.get_values_for_type(cx509.DNSName)
-                            except Exception as e:
-                                pass
                             cert_info["subject_alternative_names"] = san_values if san_values else None
                             rdp_properties["certificates"].append(cert_info)
                 except Exception as e:
