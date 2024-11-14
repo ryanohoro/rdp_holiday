@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-cryptography = "^43.0.3"
+cryptography = "^42.0.0"
 mscerts = "^2024.5.29"
 asn1crypto = "^1.5.1"
 certvalidator = "^0.11.1"
