@@ -2,12 +2,13 @@
 https://www.youtube.com/watch?v=ceR4TDuqE5A
 
 # Install
-```pip3 install git+https://github.com/wmetcalf/rdp_holiday.git -U```
+```sh
+poetry install
+```
 
 # Example
 ```
- rdp_holiday -i /home/coz/Downloads/badrdp/f357d26265a59e9c356be5a8ddb8d6533d1de222aae969c2ad4dc9c40863bfe8.rdp -o ./bad.json
- cat bad.json
+rdp_holiday /home/coz/Downloads/badrdp/f357d26265a59e9c356be5a8ddb8d6533d1de222aae969c2ad4dc9c40863bfe8.rdp
 {
     "alternate_full_address": "us-west-1.aws-ukraine.cloud",
     "full_address": "us-west-1.aws-ukraine.cloud",

@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "rdp_holiday"
+version = "0.1.0"
+description = "A Dumb RDP to JSON tool"
+authors = ["Will Metcalf <william.metcalf@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+cryptography = "^43.0.3"
+mscerts = "^2024.5.29"
+asn1crypto = "^1.5.1"
+certvalidator = "^0.11.1"
+
+[tool.poetry.scripts]
+rdp_holiday = "rdp_holiday.rdp_holiday:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
