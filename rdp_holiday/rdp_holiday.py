@@ -7,6 +7,7 @@ import sys
 from contextlib import suppress
 from hashlib import sha1, sha256
 from struct import unpack
+from typing import BinaryIO
 
 MISSED_DEPS = False
 
@@ -124,27 +125,37 @@ class RDPHoliday:
             sign_data["general_error"] = f"{e}"
         return sign_data
 
-
-    def parse_rdp_file(self, file_path):
+    def parse_rdp_file(self, file: str | BinaryIO) -> dict:
         rdp_properties = {}
         try:
             content = ""
             encoding = "utf-8"
-            with open(file_path, "rb") as f:
-                raw = f.read(4)
-                if raw.startswith(b"\xff\xfe\x00\x00"):
-                    encoding = "utf-32-le"
-                elif raw.startswith(b"\x00\x00\xfe\xff"):
-                    encoding = "utf-32-be"
-                elif raw.startswith(b"\xfe\xff"):
-                    encoding = "utf-16-be"
-                elif raw.startswith(b"\xff\xfe"):
-                    encoding = "utf-16-le"
-                elif raw.startswith(b"\xef\xbb\xbf"):
-                    encoding = "utf-8-sig"
 
-            with open(file_path, "r", encoding=encoding, errors="ignore") as f:
-                content = f.read()
+            f: BinaryIO = BinaryIO()
+            raw: bytes = bytes()
+
+            if isinstance(file, str):
+                f = open(file, "rb")
+                raw = f.read()
+                f.close()
+            else:
+                raw = file.read()
+
+            if raw.startswith(b"\xff\xfe\x00\x00"):
+                encoding = "utf-32-le"
+            elif raw.startswith(b"\x00\x00\xfe\xff"):
+                encoding = "utf-32-be"
+            elif raw.startswith(b"\xfe\xff"):
+                encoding = "utf-16-be"
+            elif raw.startswith(b"\xff\xfe"):
+                encoding = "utf-16-le"
+            elif raw.startswith(b"\xef\xbb\xbf"):
+                encoding = "utf-8-sig"
+            else:
+                raise ValueError("No matching encoding found")
+
+            content = raw.decode(encoding, errors="ignore")
+
             if content and re.search(r"full\s+address\s*:\s*s\s*:", content, re.I):
                 for line in content.splitlines():
                     for prop, pattern in self.property_patterns.items():
