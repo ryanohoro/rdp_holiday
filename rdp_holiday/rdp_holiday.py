@@ -128,11 +128,6 @@ class RDPHoliday:
     def parse_rdp_file(self, file: str | BinaryIO) -> dict:
         rdp_properties = {}
         try:
-            content = ""
-            encoding = "utf-8"
-
-            f: BinaryIO = BinaryIO()
-            raw: bytes = bytes()
 
             if isinstance(file, str):
                 f = open(file, "rb")
@@ -152,7 +147,9 @@ class RDPHoliday:
             elif raw.startswith(b"\xef\xbb\xbf"):
                 encoding = "utf-8-sig"
             else:
-                raise ValueError("No matching encoding found")
+                encoding = "ascii"
+
+            rdp_properties["encoding"] = encoding
 
             content = raw.decode(encoding, errors="ignore")
 
@@ -248,9 +245,10 @@ def main():
 
     if not rdpholiday.rdp_properties:
         print("Failed to parse RDP file.")
+        print(args.input_file)
         sys.exit(1)
     try:
-        output = json.dumps(rdpholiday.rdp_properties, indent=4)
+        output = json.dumps(rdpholiday.rdp_properties)  # , indent=4)
         if args.output_file:
             with open(args.output_file, "w") as outfile:
                 outfile.write(output)
